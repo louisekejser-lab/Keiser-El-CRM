@@ -203,6 +203,19 @@
   .fi,.fs,.fta { width:100%; background:var(--card); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; padding:9px 12px; outline:none; transition:border-color .15s; letter-spacing:.3px; }
   .fi::placeholder,.fta::placeholder { color:var(--muted); }
   .fta { resize:vertical; min-height:72px; }
+  .mic-btn {
+    position:absolute; right:10px; bottom:10px;
+    background:none; border:none; font-size:20px; color:var(--muted);
+    cursor:pointer; padding:4px; border-radius:50%;
+    transition:color .15s, transform .15s;
+  }
+  .mic-btn:hover { color:var(--text); }
+  .mic-btn.recording {
+    animation:pulse 1s infinite;
+    color:#FF5555;
+    transform:scale(1.2);
+  }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(255,85,85,0.7);} 70%{box-shadow:0 0 0 6px rgba(255,85,85,0);} 100%{box-shadow:0 0 0 0 rgba(255,85,85,0);} }
   .fi:focus,.fs:focus,.fta:focus { border-color:var(--border2); }
   .fs option { background:var(--card); }
   .fr { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -247,6 +260,8 @@
     </div>
   </div>
   <div class="header-right">
+    <!-- settings gear -->
+    <button id="settingsBtn" class="btn-ghost" style="font-size:18px;" onclick="openSettings()" title="Indstillinger">⚙️</button>
     <div class="hdivider"></div>
     <span class="stat-chip">Aktive sager: <strong id="ac">0</strong></span>
     <button class="btn-primary" onclick="openNew()">+ Ny sag</button>
@@ -318,7 +333,11 @@
         <div class="fg"><label class="fl">Adresse</label><input type="text" class="fi" id="f-a" placeholder="Vejnavn, by"></div>
         <div class="fg"><label class="fl">Telefon</label><input type="text" class="fi" id="f-tf" placeholder="28 51 38 41"></div>
       </div>
-      <div class="fg"><label class="fl">Noter</label><textarea class="fta" id="f-n" placeholder="Hvad er aftalt?"></textarea></div>
+      <div class="fg" style="position:relative;">
+        <label class="fl">Noter</label>
+        <textarea class="fta" id="f-n" placeholder="Hvad er aftalt?"></textarea>
+        <button type="button" id="micBtn" class="mic-btn" title="Hold for at tale">🎤</button>
+      </div>
       <div class="fr">
         <div class="fg"><label class="fl">Dato</label><input type="date" class="fi" id="f-d"></div>
         <div class="fg"><label class="fl">Tags (komma)</label><input type="text" class="fi" id="f-tg" placeholder="tavle, knx, erhverv"></div>
@@ -339,6 +358,33 @@
     <div class="mf">
       <button class="btn-ghost" onclick="cD()">Luk</button>
       <button class="btn-primary" onclick="efd()">Rediger</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- SETTINGS MODAL -->
+<div class="ov" id="sov">
+  <div class="modal">
+    <div class="mh"><div class="mt">Indstillinger</div><button class="mc" onclick="closeSettings()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">OpenAI API-nøgle</label><input type="password" class="fi" id="s-openai" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"></div>
+      <div class="fg"><label class="fl">Dinero API-nøgle</label><input type="password" class="fi" id="s-dinero" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx"></div>
+      <div class="fg"><label class="fl">AO API-nøgle</label><input type="password" class="fi" id="s-ao" placeholder="(valgfri)"></div>
+      <div class="fg"><label class="fl">LM API-nøgle</label><input type="password" class="fi" id="s-lm" placeholder="(valgfri)"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+      <div class="fg"><label class="fl">Virksomhedsnavn</label><input type="text" class="fi" id="s-name" placeholder="Keiser Electric"></div>
+      <div class="fg"><label class="fl">Adresse</label><input type="text" class="fi" id="s-address" placeholder="Gade 1, By"></div>
+      <div class="fg"><label class="fl">CVR</label><input type="text" class="fi" id="s-cvr" placeholder="12345678"></div>
+      <div class="fg"><label class="fl">Telefon</label><input type="text" class="fi" id="s-phone" placeholder="28 51 38 41"></div>
+      <div class="fg"><label class="fl">Email</label><input type="text" class="fi" id="s-email" placeholder="kontakt@keiserelectric.dk"></div>
+      <div class="fg"><label class="fl">Logo-URL</label><input type="text" class="fi" id="s-logo" placeholder="https://...png"></div>
+      <div class="fg"><label class="fl">Standard timepris (kr/time)</label><input type="number" class="fi" id="s-rate" placeholder="500"></div>
+    </div>
+    <div class="mf">
+      <button class="btn-ghost" onclick="closeSettings()">Annuller</button>
+      <button class="btn-primary" onclick="saveSettings()">Gem indstillinger</button>
     </div>
   </div>
 </div>
@@ -369,6 +415,150 @@ if(!sager.length){
     {id:uid(),kunde:'Supermarked Nord',titel:'Fejlfinding køleanlæg',status:'Faktureret',belob:3200,adresse:'Handelsgade 1, Aarhus',telefon:'',noter:'Fejl udbedret. Faktura sendt.',dato:tod(),tags:['erhverv','service']},
   ];
   ps();
+}
+
+function loadSettings(){
+  const s=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
+  if(!s) return;
+  document.getElementById('s-openai').value = s.openai||'';
+  document.getElementById('s-dinero').value = s.dinero||'';
+  document.getElementById('s-ao').value = s.ao||'';
+  document.getElementById('s-lm').value = s.lm||'';
+  document.getElementById('s-name').value = s.name||'';
+  document.getElementById('s-address').value = s.address||'';
+  document.getElementById('s-cvr').value = s.cvr||'';
+  document.getElementById('s-phone').value = s.phone||'';
+  document.getElementById('s-email').value = s.email||'';
+  document.getElementById('s-logo').value = s.logo||'';
+  document.getElementById('s-rate').value = s.rate||'';
+}
+
+function openSettings(){
+  loadSettings();
+  document.getElementById('sov').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('sov').classList.remove('open');
+}
+function saveSettings(){
+  const s={
+    openai:document.getElementById('s-openai').value.trim(),
+    dinero:document.getElementById('s-dinero').value.trim(),
+    ao:document.getElementById('s-ao').value.trim(),
+    lm:document.getElementById('s-lm').value.trim(),
+    name:document.getElementById('s-name').value.trim(),
+    address:document.getElementById('s-address').value.trim(),
+    cvr:document.getElementById('s-cvr').value.trim(),
+    phone:document.getElementById('s-phone').value.trim(),
+    email:document.getElementById('s-email').value.trim(),
+    logo:document.getElementById('s-logo').value.trim(),
+    rate:document.getElementById('s-rate').value.trim()
+  };
+  localStorage.setItem('ke2-settings', JSON.stringify(s));
+  console.log('Settings gemt',s);
+  closeSettings();
+}
+
+// speech-to-text helpers
+let mediaRecorder=null, audioChunks=[];
+function startRecording(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    console.log('Mikrofon ikke understøttet');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true})
+    .then(stream=>{
+      mediaRecorder=new MediaRecorder(stream);
+      audioChunks=[];
+      mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+      mediaRecorder.onstop=handleAudio;
+      mediaRecorder.start();
+      document.getElementById('micBtn').classList.add('recording');
+    })
+    .catch(err=>console.log('Fejl ved adgang til mikrofon',err));
+}
+function stopRecording(){
+  if(mediaRecorder&&mediaRecorder.state==='recording'){
+    mediaRecorder.stop();
+  }
+}
+function handleAudio(){
+  const blob=new Blob(audioChunks,{type:'audio/webm'});
+  sendToWhisper(blob);
+  document.getElementById('micBtn').classList.remove('recording');
+}
+function sendToWhisper(blob){
+  const settings=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
+  const key=settings.openai;
+  if(!key){ console.log('Ingen OpenAI-nøgle i indstillinger'); return; }
+  const form=new FormData();
+  form.append('file',blob,'note.webm');
+  form.append('model','whisper-1');
+  fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+key},body:form})
+    .then(r=>r.json())
+    .then(data=>{
+      console.log('Whisper svar',data);
+      if(data.text){
+        const ta=document.getElementById('f-n');
+        ta.value = ta.value + (ta.value?'\n':'') + data.text;
+      }
+    })
+    .catch(e=>console.log('Whisper fejl',e));
+}
+
+// AI-tilbudstekst helpers
+function saveOffer(id){
+  const s=sager.find(x=>x.id===id);
+  if(s){
+    const ta=document.getElementById('offer-text');
+    if(ta){
+      s.tilbud = ta.value;
+      ps();
+    }
+  }
+}
+function genTilbud(id){
+  const s=sager.find(x=>x.id===id);
+  if(!s){return;}
+  const btn=document.getElementById('genOfferBtn');
+  if(btn){btn.disabled=true;btn.textContent='Genererer…';}
+  const settings=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
+  const key=settings.openai;
+  if(!key){ console.log('Ingen OpenAI-nøgle'); if(btn){btn.disabled=false;btn.textContent='Generer tilbud';} return; }
+  const materialText = (s.materialer||[]).map(m=>`${m.navn} (${m.antal}×${m.pris}kr)`).join(', ');
+  const prompt = `Kunde: ${s.kunde}\nNoter: ${s.noter||''}\nMaterialer: ${materialText}`;
+  fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      Authorization:'Bearer '+key
+    },
+    body:JSON.stringify({
+      model:'gpt-4o',
+      messages:[
+        {role:'system',content:'Du er autoriseret el-installatør hos Keiser Electric, Aarhus. Skriv et professionelt tilbud på dansk. Inkluder: venlig indledning, punktliste over arbejde og materialer, at priser er ekskl. moms, betalingsbetingelser 14 dage netto.'},
+        {role:'user',content:prompt}
+      ]
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    console.log('GPT svar',data);
+    const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if(text){
+      s.tilbud = text;
+      ps();
+      // replace button with textarea
+      const sec = document.getElementById('offer-section');
+      if(sec){
+        sec.innerHTML = `<div class="dl">Tilbudstekst</div><textarea id="offer-text" class="fta">${text}</textarea>`;
+        const ta=document.getElementById('offer-text');
+        ta.oninput=()=>saveOffer(id);
+      }
+    }
+  })
+  .catch(e=>console.log('GPT fejl',e))
+  .finally(()=>{if(btn){btn.disabled=false;btn.textContent='Generer tilbud';}});
 }
 
 function render(){
@@ -405,6 +595,16 @@ function ch(s){
 
 function sf(f,el){flt=f;document.querySelectorAll('.fp').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
 
+function attachMicEvents(){
+  const b=document.getElementById('micBtn');
+  if(!b) return;
+  b.onmousedown=startRecording;
+  b.onmouseup=stopRecording;
+  b.onmouseleave=stopRecording;
+  b.ontouchstart=e=>{e.preventDefault(); startRecording();};
+  b.ontouchend=stopRecording;
+}
+
 function openNew(dc){
   eId=null;
   document.getElementById('ftitle').textContent='Ny sag';
@@ -413,6 +613,7 @@ function openNew(dc){
   document.getElementById('f-d').value=tod();
   document.getElementById('fov').classList.add('open');
   setTimeout(()=>document.getElementById('f-k').focus(),80);
+  attachMicEvents();
 }
 function oe(id){
   const s=sager.find(x=>x.id===id); if(!s)return;
@@ -429,12 +630,24 @@ function oe(id){
   document.getElementById('f-tg').value=(s.tags||[]).join(', ');
   document.getElementById('fov').classList.add('open');
   cD();
+  attachMicEvents();
 }
 function cF(){document.getElementById('fov').classList.remove('open');}
 function sv(){
   const k=document.getElementById('f-k').value.trim();
   if(!k){document.getElementById('f-k').focus();return;}
-  const d={kunde:k,titel:document.getElementById('f-t').value.trim(),status:document.getElementById('f-s').value,belob:parseInt(document.getElementById('f-b').value)||0,adresse:document.getElementById('f-a').value.trim(),telefon:document.getElementById('f-tf').value.trim(),noter:document.getElementById('f-n').value.trim(),dato:document.getElementById('f-d').value,tags:document.getElementById('f-tg').value.split(',').map(t=>t.trim()).filter(Boolean)};
+  const d={
+    kunde:k,
+    titel:document.getElementById('f-t').value.trim(),
+    status:document.getElementById('f-s').value,
+    belob:parseInt(document.getElementById('f-b').value)||0,
+    adresse:document.getElementById('f-a').value.trim(),
+    telefon:document.getElementById('f-tf').value.trim(),
+    noter:document.getElementById('f-n').value.trim(),
+    dato:document.getElementById('f-d').value,
+    tags:document.getElementById('f-tg').value.split(',').map(t=>t.trim()).filter(Boolean),
+    materialer:[]
+  };
   if(eId){const i=sager.findIndex(x=>x.id===eId);sager[i]={...sager[i],...d};}
   else sager.push({id:uid(),...d});
   ps();cF();render();
@@ -445,6 +658,27 @@ function od(id){
   dId=id;
   document.getElementById('dh').textContent=s.kunde;
   const btns=['Ny','Tilbud sendt','Godkendt','Faktureret'].map(st=>`<button class="sb ${s.status===st?'active':''}" data-s="${st}" onclick="cs('${id}','${st}')">${st}</button>`).join('');
+
+  // compute financials
+  const settings=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
+  const rate=parseFloat(settings.rate)||0;
+  const matTotal=(s.materialer||[]).reduce((a,m)=>a+(m.antal||0)*(m.pris||0),0);
+  const workTotal=(s.timer||0)*rate;
+  const subtotal=matTotal+workTotal;
+  const vat=subtotal*0.25;
+  const grand=subtotal+vat;
+
+  // build material rows
+  const matRows=(s.materialer||[]).map((m,i)=>`
+      <tr data-index="${i}">
+        <td><img src="https://via.placeholder.com/24" alt=""></td>
+        <td>${m.navn}${m.vnr?`<br><small>${m.vnr}</small>`:''}</td>
+        <td><input type="number" min="0" value="${m.antal}" style="width:50px;" oninput="updateMat('${id}',${i},'antal',this.value)"></td>
+        <td><input type="number" min="0" value="${m.pris}" style="width:70px;" oninput="updateMat('${id}',${i},'pris',this.value)"></td>
+        <td>${((m.antal||0)*(m.pris||0)).toLocaleString('da-DK')} kr</td>
+        <td><button class="btn-ghost" onclick="removeMat('${id}',${i})">✕</button></td>
+      </tr>`).join('');
+
   document.getElementById('db').innerHTML=`
     <div class="ds"><div class="dl">Status</div><div class="sr">${btns}</div></div>
     <div class="ds"><div class="dl">Titel</div><div class="dv">${s.titel||'–'}</div></div>
@@ -452,13 +686,74 @@ function od(id){
     ${s.telefon?`<div class="ds"><div class="dl">Telefon</div><div class="dv"><a href="tel:${s.telefon}" style="color:var(--text)">${s.telefon}</a></div></div>`:''}
     ${s.belob?`<div class="ds"><div class="dl">Beløb ekskl. moms</div><div class="dv" style="font-size:16px;font-weight:600">${s.belob.toLocaleString('da-DK')} kr</div></div>`:''}
     ${s.noter?`<div class="ds"><div class="dl">Noter</div><div class="dv">${s.noter}</div></div>`:''}
+    <!-- AI-tilbudssektion -->
+    <div class="ds" id="offer-section">
+      <div class="dl">Tilbudstekst</div>
+      ${s.tilbud?`<textarea id="offer-text" class="fta">${s.tilbud}</textarea>`:`<button class="btn-primary" id="genOfferBtn" onclick="genTilbud('${s.id}')">Generer tilbud</button>`}
+    </div>
+    <!-- materialer -->
+    <div class="ds" id="mat-sec">
+      <div class="dl">Materialer <button class="btn-ghost" style="font-size:12px;" onclick="addMaterial('${s.id}')">+ Tilføj materiale</button></div>
+      <table style="width:100%;font-size:12px;">
+        <thead><tr><th></th><th>Navn</th><th>Antal</th><th>Pris</th><th>Linje</th><th></th></tr></thead>
+        <tbody>${matRows}</tbody>
+      </table>
+      <div class="dv" style="text-align:right;font-weight:600;">Total materialer: ${matTotal.toLocaleString('da-DK')} kr</div>
+    </div>
+    <!-- timer og totals -->
+    <div class="ds">
+      <div class="dl">Timer</div>
+      <div class="dv"><input type="number" min="0" id="timer-input" value="${s.timer||0}" style="width:60px;" oninput="updateTimer('${s.id}',this.value)"> × ${rate} kr/time = ${workTotal.toLocaleString('da-DK')} kr</div>
+    </div>
+    <div class="ds"><div class="dl">Subtotal ekskl. moms</div><div class="dv">${subtotal.toLocaleString('da-DK')} kr</div></div>
+    <div class="ds"><div class="dl">Moms 25%</div><div class="dv">${vat.toLocaleString('da-DK')} kr</div></div>
+    <div class="ds"><div class="dl">Total inkl. moms</div><div class="dv">${grand.toLocaleString('da-DK')} kr</div></div>
     ${(s.tags||[]).length?`<div class="ds"><div class="dl">Tags</div><div class="card-tags">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`:''}
     <div class="ds"><div class="dl">Dato</div><div class="dv">${s.dato||'–'}</div></div>`;
   document.getElementById('dov').classList.add('open');
+  // if tilbud already present attach save handler
+  if(s.tilbud){
+    const ta=document.getElementById('offer-text');
+    if(ta) ta.oninput=()=>saveOffer(id);
+  }
 }
 function cD(){document.getElementById('dov').classList.remove('open');dId=null;}
 function efd(){if(dId)oe(dId);}
 function cs(id,st){const s=sager.find(x=>x.id===id);if(s){s.status=st;ps();render();od(id);}}
+
+// material management
+function addMaterial(id){
+  const s=sager.find(x=>x.id===id);
+  if(!s) return;
+  const navn=prompt('Produktnavn'); if(!navn) return;
+  const vnr=prompt('Varenummer (valgfri)')||'';
+  const antal=parseFloat(prompt('Antal'))||0;
+  const pris=parseFloat(prompt('Enhedspris'))||0;
+  s.materialer=s.materialer||[];
+  s.materialer.push({navn,vnr,antal,pris});
+  ps(); od(id);
+}
+function updateMat(id,index,field,value){
+  const s=sager.find(x=>x.id===id);
+  if(!s||!s.materialer) return;
+  const m=s.materialer[index];
+  if(!m) return;
+  if(field==='antal') m.antal=parseFloat(value)||0;
+  if(field==='pris') m.pris=parseFloat(value)||0;
+  ps(); od(id);
+}
+function removeMat(id,index){
+  const s=sager.find(x=>x.id===id);
+  if(!s||!s.materialer) return;
+  s.materialer.splice(index,1);
+  ps(); od(id);
+}
+function updateTimer(id,val){
+  const s=sager.find(x=>x.id===id);
+  if(!s) return;
+  s.timer=parseFloat(val)||0;
+  ps(); od(id);
+}
 
 function oc(e,id){e.stopPropagation();cId=id;const m=document.getElementById('ctx');m.classList.add('open');m.style.left=Math.min(e.clientX,window.innerWidth-175)+'px';m.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';}
 function cc(){document.getElementById('ctx').classList.remove('open');}
@@ -478,6 +773,8 @@ document.addEventListener('keydown',e=>{
   if(e.key==='n'&&!e.target.matches('input,textarea,select'))openNew();
 });
 
+// ensure settings are loaded early so other features can read them later
+loadSettings();
 render();
 </script>
 </body>

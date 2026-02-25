@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keiser Electric – Sagsstyring</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0A0A0A;
+    --surface:  #111111;
+    --card:     #181818;
+    --card2:    #202020;
+    --border:   #2A2A2A;
+    --border2:  #333333;
+    --text:     #F2F2F0;
+    --muted:    #6B6B6B;
+    --muted2:   #888888;
+    --c-ny:        #4A7FA5;
+    --c-tilbud:    #A5824A;
+    --c-godkendt:  #4A8A62;
+    --c-fakt:      #5A5A5A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 14px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-bolt { width: 26px; height: 26px; }
+  .logo-name {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600; font-size: 15px;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: var(--text); line-height: 1;
+  }
+  .logo-tagline {
+    font-size: 9px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--muted); font-weight: 400;
+    margin-top: 2px;
+  }
+  .hdivider { width:1px; height:28px; background:var(--border2); margin:0 20px; }
+  .header-right { display:flex; align-items:center; gap:12px; }
+  .stat-chip { font-size:12px; color:var(--muted2); letter-spacing:0.5px; }
+  .stat-chip strong { color:var(--text); font-weight:600; }
+  .btn-primary {
+    background: var(--text); color: var(--bg);
+    border: none; border-radius: 4px; padding: 8px 20px;
+    font-family: 'Montserrat', sans-serif; font-weight: 600;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { opacity:.85; transform:translateY(-1px); }
+  .btn-primary:active { transform:translateY(0); }
+
+  /* TOOLBAR */
+  .toolbar {
+    padding: 13px 28px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg); flex-wrap: wrap;
+  }
+  .search-wrap { position:relative; flex:1; min-width:180px; max-width:320px; }
+  .search-wrap input {
+    width:100%; background:var(--card); border:1px solid var(--border);
+    border-radius:4px; color:var(--text);
+    font-family:'Montserrat',sans-serif; font-size:12px;
+    padding:7px 12px 7px 32px; outline:none;
+    transition:border-color 0.15s; letter-spacing:0.3px;
+  }
+  .search-wrap input::placeholder { color:var(--muted); }
+  .search-wrap input:focus { border-color:var(--border2); }
+  .si { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:14px; }
+  .fp {
+    background:none; border:1px solid var(--border); border-radius:20px;
+    color:var(--muted2); padding:5px 14px; font-size:10px;
+    letter-spacing:0.8px; text-transform:uppercase; cursor:pointer;
+    font-family:'Montserrat',sans-serif;
+    transition:border-color 0.15s, color 0.15s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .fp:hover { border-color:var(--border2); color:var(--text); }
+  .fp.active { border-color:var(--text); color:var(--text); }
+  .pc {
+    background:var(--card2); border-radius:10px;
+    padding:1px 6px; font-size:10px; font-weight:600;
+  }
+  .fp.active .pc { background:var(--text); color:var(--bg); }
+
+  /* BOARD */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(240px, 1fr));
+    gap: 1px; background: var(--border);
+    min-height: calc(100vh - 148px);
+    align-items: start;
+  }
+  @media(max-width:900px){ .board{ grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:540px){ .board{ grid-template-columns:1fr; } header,.toolbar{ padding-left:16px;padding-right:16px; } }
+
+  .column { background:var(--bg); display:flex; flex-direction:column; min-height:calc(100vh - 148px); }
+  .col-head {
+    padding:15px 18px 13px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:60px; background:var(--bg); z-index:10;
+    border-bottom:1px solid var(--border);
+  }
+  .col-lbl {
+    display:flex; align-items:center; gap:8px;
+    font-size:10px; font-weight:600;
+    letter-spacing:1.5px; text-transform:uppercase; color:var(--muted2);
+  }
+  .cstripe { width:2px; height:14px; border-radius:2px; }
+  .ccnt {
+    font-size:11px; color:var(--muted);
+    background:var(--card); border-radius:10px;
+    padding:2px 8px; letter-spacing:0.3px;
+  }
+  .col-body {
+    padding:12px 12px 20px;
+    display:flex; flex-direction:column; gap:8px; flex:1;
+  }
+
+  /* CARDS */
+  .card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:6px; padding:13px 13px 11px;
+    cursor:pointer; position:relative; overflow:hidden;
+    transition:border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    animation:fu .25s ease forwards;
+  }
+  @keyframes fu { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .card::after { content:''; position:absolute; left:0;top:0;bottom:0; width:2px; }
+  .card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.5); }
+
+  .card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:5px; gap:8px; }
+  .card-cust { font-weight:600; font-size:13px; line-height:1.3; color:var(--text); flex:1; }
+  .card-menu { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; padding:0 2px; border-radius:3px; transition:color .15s; line-height:1; flex-shrink:0; }
+  .card-menu:hover { color:var(--text); }
+  .card-ttl { font-size:12px; color:var(--muted2); line-height:1.45; margin-bottom:9px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-tags { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:9px; }
+  .tag { background:var(--card2); border:1px solid var(--border2); border-radius:3px; padding:2px 7px; font-size:10px; letter-spacing:.5px; color:var(--muted); text-transform:uppercase; }
+  .card-foot { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--border); padding-top:9px; }
+  .card-date { font-size:10px; color:var(--muted); letter-spacing:.3px; }
+  .card-amt  { font-size:12px; font-weight:600; color:var(--text); letter-spacing:.3px; }
+
+  .col-ny     .card::after, .col-ny     .cstripe { background:var(--c-ny); }
+  .col-tilbud .card::after, .col-tilbud .cstripe { background:var(--c-tilbud); }
+  .col-godk   .card::after, .col-godk   .cstripe { background:var(--c-godkendt); }
+  .col-fakt   .card::after, .col-fakt   .cstripe { background:var(--c-fakt); }
+
+  .col-body.drag-over { background:rgba(255,255,255,.03); outline:1px dashed var(--border2); outline-offset:-6px; border-radius:4px; }
+  .card.dragging { opacity:.3; transform:scale(.97); }
+
+  .add-btn {
+    background:none; border:1px dashed var(--border); border-radius:6px;
+    color:var(--muted); padding:9px; width:100%; cursor:pointer;
+    font-size:10px; letter-spacing:.8px; text-transform:uppercase;
+    font-family:'Montserrat',sans-serif;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+    transition:border-color .15s, color .15s; margin-top:4px;
+  }
+  .add-btn:hover { border-color:var(--border2); color:var(--text); }
+  .empty-col { text-align:center; padding:28px 10px; color:var(--muted); font-size:11px; letter-spacing:.5px; }
+
+  /* TOTALS */
+  .totals {
+    background:var(--bg); border-top:1px solid var(--border);
+    padding:10px 28px; display:flex; gap:28px; flex-wrap:wrap;
+    position:sticky; bottom:0;
+  }
+  .ti { font-size:10px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  .ti strong { color:var(--text); font-weight:600; font-size:13px; margin-left:6px; }
+
+  /* MODAL */
+  .ov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:200; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
+  .ov.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border2); border-radius:8px; width:100%; max-width:500px; max-height:92vh; overflow-y:auto; animation:mi .22s ease; }
+  @keyframes mi { from{opacity:0;transform:translateY(12px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .mh { padding:20px 22px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .mt { font-family:'Raleway',sans-serif; font-size:15px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text); }
+  .mc { background:var(--card); border:1px solid var(--border); border-radius:4px; color:var(--muted); width:28px; height:28px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:color .15s; }
+  .mc:hover { color:var(--text); }
+  .mb { padding:18px 22px; }
+  .fg { margin-bottom:14px; }
+  .fl { display:block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:5px; }
+  .fi,.fs,.fta { width:100%; background:var(--card); border:1px solid var(--border); border-radius:4px; color:var(--text); font-family:'Montserrat',sans-serif; font-size:12px; padding:9px 12px; outline:none; transition:border-color .15s; letter-spacing:.3px; }
+  .fi::placeholder,.fta::placeholder { color:var(--muted); }
+  .fta { resize:vertical; min-height:72px; }
+  .fi:focus,.fs:focus,.fta:focus { border-color:var(--border2); }
+  .fs option { background:var(--card); }
+  .fr { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mf { padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+  .btn-ghost { background:none; border:1px solid var(--border); border-radius:4px; color:var(--muted); padding:8px 18px; font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:.8px; text-transform:uppercase; cursor:pointer; transition:color .15s,border-color .15s; }
+  .btn-ghost:hover { color:var(--text); border-color:var(--border2); }
+
+  /* DETAIL */
+  .ds { margin-bottom:16px; }
+  .dl { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-bottom:4px; }
+  .dv { font-size:13px; color:var(--text); line-height:1.5; }
+  .sr { display:flex; gap:6px; flex-wrap:wrap; }
+  .sb { border-radius:4px; padding:6px 12px; font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border:1px solid transparent; font-family:'Montserrat',sans-serif; transition:opacity .15s; opacity:.4; }
+  .sb.active { opacity:1; }
+  .sb[data-s="Ny"]           { background:rgba(74,127,165,.15); color:var(--c-ny);       border-color:var(--c-ny); }
+  .sb[data-s="Tilbud sendt"] { background:rgba(165,130,74,.15); color:var(--c-tilbud);   border-color:var(--c-tilbud); }
+  .sb[data-s="Godkendt"]     { background:rgba(74,138,98,.15);  color:var(--c-godkendt); border-color:var(--c-godkendt); }
+  .sb[data-s="Faktureret"]   { background:rgba(90,90,90,.15);   color:var(--c-fakt);     border-color:var(--c-fakt); }
+
+  /* CTX */
+  .ctx { display:none; position:fixed; background:var(--card); border:1px solid var(--border2); border-radius:6px; z-index:300; min-width:160px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+  .ctx.open { display:block; }
+  .ci { padding:9px 14px; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background .1s; letter-spacing:.3px; }
+  .ci:hover { background:var(--card2); }
+  .ci.danger { color:#A05555; }
+
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg class="logo-bolt" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 2L4.5 13.5H11L9 22L19.5 10H13L13 2Z" fill="white"/>
+    </svg>
+    <div>
+      <div class="logo-name">Keiser Electric</div>
+      <div class="logo-tagline">Sagsstyring</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="hdivider"></div>
+    <span class="stat-chip">Aktive sager: <strong id="ac">0</strong></span>
+    <button class="btn-primary" onclick="openNew()">+ Ny sag</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <span class="si">⌕</span>
+    <input type="text" id="sq" placeholder="Søg kunde eller sag..." oninput="render()">
+  </div>
+  <button class="fp active" onclick="sf('alle',this)">Alle <span class="pc" id="b-alle">0</span></button>
+  <button class="fp" onclick="sf('Ny',this)">Ny</button>
+  <button class="fp" onclick="sf('Tilbud sendt',this)">Tilbud</button>
+  <button class="fp" onclick="sf('Godkendt',this)">Godkendt</button>
+  <button class="fp" onclick="sf('Faktureret',this)">Faktureret</button>
+</div>
+
+<div class="board">
+  <div class="column col-ny">
+    <div class="col-head">
+      <div class="col-lbl"><span class="cstripe"></span>Ny henvendelse</div>
+      <span class="ccnt" id="cnt-Ny">0</span>
+    </div>
+    <div class="col-body" data-col="Ny" ondragover="dO(event)" ondragleave="dL(event)" ondrop="dD(event,'Ny')"></div>
+  </div>
+  <div class="column col-tilbud">
+    <div class="col-head">
+      <div class="col-lbl"><span class="cstripe"></span>Tilbud sendt</div>
+      <span class="ccnt" id="cnt-Tilbud sendt">0</span>
+    </div>
+    <div class="col-body" data-col="Tilbud sendt" ondragover="dO(event)" ondragleave="dL(event)" ondrop="dD(event,'Tilbud sendt')"></div>
+  </div>
+  <div class="column col-godk">
+    <div class="col-head">
+      <div class="col-lbl"><span class="cstripe"></span>Godkendt</div>
+      <span class="ccnt" id="cnt-Godkendt">0</span>
+    </div>
+    <div class="col-body" data-col="Godkendt" ondragover="dO(event)" ondragleave="dL(event)" ondrop="dD(event,'Godkendt')"></div>
+  </div>
+  <div class="column col-fakt">
+    <div class="col-head">
+      <div class="col-lbl"><span class="cstripe"></span>Faktureret</div>
+      <span class="ccnt" id="cnt-Faktureret">0</span>
+    </div>
+    <div class="col-body" data-col="Faktureret" ondragover="dO(event)" ondragleave="dL(event)" ondrop="dD(event,'Faktureret')"></div>
+  </div>
+</div>
+
+<div class="totals">
+  <div class="ti">Nye<strong id="t-ny">0</strong></div>
+  <div class="ti">Tilbud ude<strong id="t-tb">0</strong></div>
+  <div class="ti">Godkendt<strong id="t-gk">0</strong></div>
+  <div class="ti">Faktureret<strong id="t-fk">0 kr</strong></div>
+</div>
+
+<!-- FORM MODAL -->
+<div class="ov" id="fov">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="ftitle">Ny sag</div><button class="mc" onclick="cF()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Kundens navn *</label><input type="text" class="fi" id="f-k" placeholder="Eks. Peter Hansen"></div>
+      <div class="fg"><label class="fl">Sagstype / Titel</label><input type="text" class="fi" id="f-t" placeholder="Eks. Ny eltavle, Ladestander"></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Status</label><select class="fs" id="f-s"><option>Ny</option><option>Tilbud sendt</option><option>Godkendt</option><option>Faktureret</option></select></div>
+        <div class="fg"><label class="fl">Beløb ekskl. moms (kr)</label><input type="number" class="fi" id="f-b" placeholder="0"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Adresse</label><input type="text" class="fi" id="f-a" placeholder="Vejnavn, by"></div>
+        <div class="fg"><label class="fl">Telefon</label><input type="text" class="fi" id="f-tf" placeholder="28 51 38 41"></div>
+      </div>
+      <div class="fg"><label class="fl">Noter</label><textarea class="fta" id="f-n" placeholder="Hvad er aftalt?"></textarea></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Dato</label><input type="date" class="fi" id="f-d"></div>
+        <div class="fg"><label class="fl">Tags (komma)</label><input type="text" class="fi" id="f-tg" placeholder="tavle, knx, erhverv"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn-ghost" onclick="cF()">Annuller</button>
+      <button class="btn-primary" onclick="sv()">Gem sag</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="ov" id="dov">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="dh">–</div><button class="mc" onclick="cD()">✕</button></div>
+    <div class="mb" id="db"></div>
+    <div class="mf">
+      <button class="btn-ghost" onclick="cD()">Luk</button>
+      <button class="btn-primary" onclick="efd()">Rediger</button>
+    </div>
+  </div>
+</div>
+
+<!-- CTX -->
+<div class="ctx" id="ctx">
+  <div class="ci" onclick="ce()">✎ &nbsp;Rediger</div>
+  <div class="ci" onclick="cm('Ny')">→ Ny</div>
+  <div class="ci" onclick="cm('Tilbud sendt')">→ Tilbud sendt</div>
+  <div class="ci" onclick="cm('Godkendt')">→ Godkendt</div>
+  <div class="ci" onclick="cm('Faktureret')">→ Faktureret</div>
+  <div class="ci danger" onclick="cd()">✕ &nbsp;Slet sag</div>
+</div>
+
+<script>
+let sager=JSON.parse(localStorage.getItem('ke2')||'[]');
+let eId=null,cId=null,dId=null,drId=null,flt='alle';
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const tod=()=>new Date().toISOString().slice(0,10);
+const ps =()=>localStorage.setItem('ke2',JSON.stringify(sager));
+
+if(!sager.length){
+  sager=[
+    {id:uid(),kunde:'Peter Hansen',titel:'Ny gruppetavle',status:'Ny',belob:8500,adresse:'Søndergade 14, Viborg',telefon:'22 33 44 55',noter:'Gammel tavle skal skiftes. 16 grupper + jording.',dato:tod(),tags:['tavle']},
+    {id:uid(),kunde:'Lone Kristiansen',titel:'3 stikkontakter i køkken',status:'Ny',belob:1200,adresse:'Birkevej 7, Skive',telefon:'',noter:'Brændte stikkontakter. Ny ved komfur.',dato:tod(),tags:['stikkontakter']},
+    {id:uid(),kunde:'Mads Byggeri A/S',titel:'El-installation 12 lejligheder',status:'Tilbud sendt',belob:145000,adresse:'Industrivej 3, Aarhus',telefon:'87 65 43 21',noter:'Ny bebyggelse. Tilbud sendt 12/5.',dato:tod(),tags:['erhverv','nyt anlæg']},
+    {id:uid(),kunde:'Pia Møller',titel:'Ladestander til elbil',status:'Godkendt',belob:6800,adresse:'Møllevej 2, Harlev',telefon:'44 55 66 77',noter:'Zaptec Go, carport. Kabel fra tavle.',dato:tod(),tags:['elbil','ladestander']},
+    {id:uid(),kunde:'Supermarked Nord',titel:'Fejlfinding køleanlæg',status:'Faktureret',belob:3200,adresse:'Handelsgade 1, Aarhus',telefon:'',noter:'Fejl udbedret. Faktura sendt.',dato:tod(),tags:['erhverv','service']},
+  ];
+  ps();
+}
+
+function render(){
+  const q=document.getElementById('sq').value.toLowerCase();
+  ['Ny','Tilbud sendt','Godkendt','Faktureret'].forEach(col=>{
+    const body=document.querySelector(`[data-col="${col}"]`);
+    const list=sager.filter(s=>{
+      const mf=flt==='alle'||s.status===flt;
+      const ms=!q||[s.kunde,s.titel,s.noter||''].some(x=>x.toLowerCase().includes(q));
+      return s.status===col&&mf&&ms;
+    });
+    document.getElementById('cnt-'+col).textContent=list.length;
+    body.innerHTML=(list.length?list.map(ch).join(''):`<div class="empty-col">Ingen sager</div>`);
+    body.innerHTML+=`<button class="add-btn" onclick="openNew('${col}')">+ Tilføj sag</button>`;
+  });
+  document.getElementById('ac').textContent=sager.filter(s=>s.status!=='Faktureret').length;
+  document.getElementById('b-alle').textContent=sager.length;
+  document.getElementById('t-ny').textContent=sager.filter(s=>s.status==='Ny').length;
+  document.getElementById('t-tb').textContent=sager.filter(s=>s.status==='Tilbud sendt').length;
+  document.getElementById('t-gk').textContent=sager.filter(s=>s.status==='Godkendt').length;
+  document.getElementById('t-fk').textContent=sager.filter(s=>s.status==='Faktureret').reduce((a,b)=>a+(b.belob||0),0).toLocaleString('da-DK')+' kr';
+}
+
+function ch(s){
+  const tags=(s.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  const amt=s.belob?s.belob.toLocaleString('da-DK')+' kr':'';
+  return `<div class="card" id="c-${s.id}" draggable="true" ondragstart="ds(event,'${s.id}')" ondragend="de()" onclick="od('${s.id}')">
+    <div class="card-top"><div class="card-cust">${s.kunde}</div><button class="card-menu" onclick="oc(event,'${s.id}')">⋮</button></div>
+    ${s.titel?`<div class="card-ttl">${s.titel}</div>`:''}
+    ${tags?`<div class="card-tags">${tags}</div>`:''}
+    <div class="card-foot"><span class="card-date">${s.dato||''}</span>${amt?`<span class="card-amt">${amt}</span>`:''}</div>
+  </div>`;
+}
+
+function sf(f,el){flt=f;document.querySelectorAll('.fp').forEach(b=>b.classList.remove('active'));el.classList.add('active');render();}
+
+function openNew(dc){
+  eId=null;
+  document.getElementById('ftitle').textContent='Ny sag';
+  ['f-k','f-t','f-b','f-a','f-tf','f-n','f-tg'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-s').value=dc||'Ny';
+  document.getElementById('f-d').value=tod();
+  document.getElementById('fov').classList.add('open');
+  setTimeout(()=>document.getElementById('f-k').focus(),80);
+}
+function oe(id){
+  const s=sager.find(x=>x.id===id); if(!s)return;
+  eId=id;
+  document.getElementById('ftitle').textContent='Rediger sag';
+  document.getElementById('f-k').value=s.kunde;
+  document.getElementById('f-t').value=s.titel||'';
+  document.getElementById('f-s').value=s.status;
+  document.getElementById('f-b').value=s.belob||'';
+  document.getElementById('f-a').value=s.adresse||'';
+  document.getElementById('f-tf').value=s.telefon||'';
+  document.getElementById('f-n').value=s.noter||'';
+  document.getElementById('f-d').value=s.dato||tod();
+  document.getElementById('f-tg').value=(s.tags||[]).join(', ');
+  document.getElementById('fov').classList.add('open');
+  cD();
+}
+function cF(){document.getElementById('fov').classList.remove('open');}
+function sv(){
+  const k=document.getElementById('f-k').value.trim();
+  if(!k){document.getElementById('f-k').focus();return;}
+  const d={kunde:k,titel:document.getElementById('f-t').value.trim(),status:document.getElementById('f-s').value,belob:parseInt(document.getElementById('f-b').value)||0,adresse:document.getElementById('f-a').value.trim(),telefon:document.getElementById('f-tf').value.trim(),noter:document.getElementById('f-n').value.trim(),dato:document.getElementById('f-d').value,tags:document.getElementById('f-tg').value.split(',').map(t=>t.trim()).filter(Boolean)};
+  if(eId){const i=sager.findIndex(x=>x.id===eId);sager[i]={...sager[i],...d};}
+  else sager.push({id:uid(),...d});
+  ps();cF();render();
+}
+
+function od(id){
+  const s=sager.find(x=>x.id===id); if(!s)return;
+  dId=id;
+  document.getElementById('dh').textContent=s.kunde;
+  const btns=['Ny','Tilbud sendt','Godkendt','Faktureret'].map(st=>`<button class="sb ${s.status===st?'active':''}" data-s="${st}" onclick="cs('${id}','${st}')">${st}</button>`).join('');
+  document.getElementById('db').innerHTML=`
+    <div class="ds"><div class="dl">Status</div><div class="sr">${btns}</div></div>
+    <div class="ds"><div class="dl">Titel</div><div class="dv">${s.titel||'–'}</div></div>
+    ${s.adresse?`<div class="ds"><div class="dl">Adresse</div><div class="dv">${s.adresse}</div></div>`:''}
+    ${s.telefon?`<div class="ds"><div class="dl">Telefon</div><div class="dv"><a href="tel:${s.telefon}" style="color:var(--text)">${s.telefon}</a></div></div>`:''}
+    ${s.belob?`<div class="ds"><div class="dl">Beløb ekskl. moms</div><div class="dv" style="font-size:16px;font-weight:600">${s.belob.toLocaleString('da-DK')} kr</div></div>`:''}
+    ${s.noter?`<div class="ds"><div class="dl">Noter</div><div class="dv">${s.noter}</div></div>`:''}
+    ${(s.tags||[]).length?`<div class="ds"><div class="dl">Tags</div><div class="card-tags">${s.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div></div>`:''}
+    <div class="ds"><div class="dl">Dato</div><div class="dv">${s.dato||'–'}</div></div>`;
+  document.getElementById('dov').classList.add('open');
+}
+function cD(){document.getElementById('dov').classList.remove('open');dId=null;}
+function efd(){if(dId)oe(dId);}
+function cs(id,st){const s=sager.find(x=>x.id===id);if(s){s.status=st;ps();render();od(id);}}
+
+function oc(e,id){e.stopPropagation();cId=id;const m=document.getElementById('ctx');m.classList.add('open');m.style.left=Math.min(e.clientX,window.innerWidth-175)+'px';m.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';}
+function cc(){document.getElementById('ctx').classList.remove('open');}
+function ce(){cc();oe(cId);}
+function cm(st){const s=sager.find(x=>x.id===cId);if(s){s.status=st;ps();render();}cc();}
+function cd(){if(confirm('Slet sagen?')){sager=sager.filter(x=>x.id!==cId);ps();render();}cc();}
+document.addEventListener('click',e=>{if(!e.target.closest('#ctx')&&!e.target.closest('.card-menu'))cc();});
+
+function ds(e,id){drId=id;setTimeout(()=>document.getElementById('c-'+id)?.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';}
+function de(){document.querySelectorAll('.card').forEach(c=>c.classList.remove('dragging'));}
+function dO(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function dL(e){e.currentTarget.classList.remove('drag-over');}
+function dD(e,col){e.preventDefault();e.currentTarget.classList.remove('drag-over');if(drId){const s=sager.find(x=>x.id===drId);if(s){s.status=col;ps();render();}drId=null;}}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){cF();cD();cc();}
+  if(e.key==='n'&&!e.target.matches('input,textarea,select'))openNew();
+});
+
+render();
+</script>
+</body>
+</html>

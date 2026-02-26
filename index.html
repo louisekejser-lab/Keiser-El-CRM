@@ -248,6 +248,22 @@
 </style>
 </head>
 <body>
+<!-- jsPDF for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- OFFER EDIT PAGE -->
+<div class="ov" id="offerov">
+  <div class="modal" style="max-width:800px; width:90%;">
+    <div class="mh"><div class="mt">Tilbudseditor</div><button class="mc" onclick="closeOfferPage()">✕</button></div>
+    <div class="mb" id="offer-content">
+      <!-- dynamically injected -->
+    </div>
+    <div class="mf">
+      <button class="btn-ghost" onclick="closeOfferPage()">Luk</button>
+      <button class="btn-primary" onclick="exportOfferPDF(currentOfferId)">Download PDF</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div class="logo">
@@ -517,14 +533,32 @@ function saveOffer(id){
     }
   }
 }
+function showMessage(msg){
+  const db=document.getElementById('db');
+  if(!db) return;
+  const old=db.querySelector('.msg');
+  if(old) old.remove();
+  const div=document.createElement('div');
+  div.className='msg';
+  div.style.cssText='background:#333;padding:8px 12px;margin-bottom:12px;font-size:12px;border-radius:4px;color:#fff;';
+  div.textContent=msg;
+  db.prepend(div);
+}
+
 function genTilbud(id){
   const s=sager.find(x=>x.id===id);
   if(!s){return;}
+  showMessage('Sender forespørgsel til OpenAI...');
   const btn=document.getElementById('genOfferBtn');
   if(btn){btn.disabled=true;btn.textContent='Genererer…';}
   const settings=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
   const key=settings.openai;
-  if(!key){ console.log('Ingen OpenAI-nøgle'); if(btn){btn.disabled=false;btn.textContent='Generer tilbud';} return; }
+  if(!key){
+    console.log('Ingen OpenAI-nøgle');
+    showMessage('Fejl: Ingen OpenAI API-nøgle i indstillinger');
+    if(btn){btn.disabled=false;btn.textContent='Generer tilbud';}
+    return;
+  }
   const materialText = (s.materialer||[]).map(m=>`${m.navn} (${m.antal}×${m.pris}kr)`).join(', ');
   const prompt = `Kunde: ${s.kunde}\nNoter: ${s.noter||''}\nMaterialer: ${materialText}`;
   fetch('https://api.openai.com/v1/chat/completions',{
@@ -541,23 +575,36 @@ function genTilbud(id){
       ]
     })
   })
-  .then(r=>r.json())
+  .then(r=>{
+    if(!r.ok){
+      return r.text().then(txt=>{throw new Error('Status '+r.status+': '+txt);});
+    }
+    return r.json();
+  })
   .then(data=>{
     console.log('GPT svar',data);
     const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
     if(text){
-      s.tilbud = text;
-      ps();
+      s.tilbud = text; // this is where the generated offer is stored!
+      ps(); // persists to localStorage under key 'ke2'
+      showMessage('Tilbud modtaget og gemt.');
       // replace button with textarea
       const sec = document.getElementById('offer-section');
       if(sec){
-        sec.innerHTML = `<div class="dl">Tilbudstekst</div><textarea id="offer-text" class="fta">${text}</textarea>`;
+        sec.innerHTML = `<div class="dl">Tilbudstekst</div><textarea id="offer-text" class="fta">${text}</textarea><br><button class="btn-ghost" style="margin-top:8px;" onclick="openOfferPage('${id}')">Åbn tilbud</button>`;
         const ta=document.getElementById('offer-text');
         ta.oninput=()=>saveOffer(id);
       }
+      // open editor page automatically
+      openOfferPage(id);
+    } else {
+      showMessage('Ingen tekst modtaget fra API.');
     }
   })
-  .catch(e=>console.log('GPT fejl',e))
+  .catch(e=>{
+    console.log('GPT fejl',e);
+    showMessage('Fejl ved kald til OpenAI: '+e.message);
+  })
   .finally(()=>{if(btn){btn.disabled=false;btn.textContent='Generer tilbud';}});
 }
 
@@ -586,7 +633,7 @@ function ch(s){
   const tags=(s.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
   const amt=s.belob?s.belob.toLocaleString('da-DK')+' kr':'';
   return `<div class="card" id="c-${s.id}" draggable="true" ondragstart="ds(event,'${s.id}')" ondragend="de()" onclick="od('${s.id}')">
-    <div class="card-top"><div class="card-cust">${s.kunde}</div><button class="card-menu" onclick="oc(event,'${s.id}')">⋮</button></div>
+    <div class="card-top"><div class="card-cust">${s.kunde}${s.tilbud?` <span title="Tilbud genereret">📄</span>`:''}</div><button class="card-menu" onclick="oc(event,'${s.id}')">⋮</button></div>
     ${s.titel?`<div class="card-ttl">${s.titel}</div>`:''}
     ${tags?`<div class="card-tags">${tags}</div>`:''}
     <div class="card-foot"><span class="card-date">${s.dato||''}</span>${amt?`<span class="card-amt">${amt}</span>`:''}</div>
@@ -689,7 +736,7 @@ function od(id){
     <!-- AI-tilbudssektion -->
     <div class="ds" id="offer-section">
       <div class="dl">Tilbudstekst</div>
-      ${s.tilbud?`<textarea id="offer-text" class="fta">${s.tilbud}</textarea>`:`<button class="btn-primary" id="genOfferBtn" onclick="genTilbud('${s.id}')">Generer tilbud</button>`}
+      ${s.tilbud?`<textarea id="offer-text" class="fta">${s.tilbud}</textarea><br><button class="btn-ghost" style="margin-top:8px;" onclick="openOfferPage('${s.id}')">Åbn tilbud</button>`:`<button class="btn-primary" id="genOfferBtn" onclick="genTilbud('${s.id}')">Generer tilbud</button>`}
     </div>
     <!-- materialer -->
     <div class="ds" id="mat-sec">
@@ -753,6 +800,182 @@ function updateTimer(id,val){
   if(!s) return;
   s.timer=parseFloat(val)||0;
   ps(); od(id);
+}
+
+// offer page support
+let currentOfferId=null;
+function guessMaterialsFromText(text){
+  const arr=[];
+  const regex=/([\wæøåÆØÅ\s]+)\s+(\d+)\s*kr/gi;
+  let m;
+  while((m=regex.exec(text))){
+    arr.push({navn:m[1].trim(),antal:1,pris:parseFloat(m[2])});
+  }
+  return arr;
+}
+function openOfferPage(id){
+  const s=sager.find(x=>x.id===id);
+  if(!s) return;
+  currentOfferId=id;
+  const settings=JSON.parse(localStorage.getItem('ke2-settings')||'{}');
+  const rate=parseFloat(settings.rate)||0;
+  // prepare material list
+  let mats = s.materialer && s.materialer.length? [...s.materialer] : [];
+  if(!mats.length && s.tilbud){
+    mats = guessMaterialsFromText(s.tilbud);
+  }
+  // generate html
+  let html=`
+    <div class="ds"><div class="dl">Kunde</div><div class="dv"><input type="text" id="offer-cust" value="${s.kunde||''}" style="width:100%"></div></div>
+    <div class="ds"><div class="dl">Adresse</div><div class="dv"><input type="text" id="offer-addr" value="${s.adresse||''}" style="width:100%"></div></div>
+    <div class="ds"><div class="dl">Type</div><div class="dv"><select id="offer-type"><option>Tilbud</option><option>Overslag</option></select></div></div>
+    <div class="ds"><div class="dl">Materialer</div>
+      <table style="width:100%;font-size:12px;" id="offer-mat-table">
+        <thead><tr><th></th><th>Navn</th><th>Antal</th><th>Pris</th><th>Linje</th><th></th></tr></thead>
+        <tbody>`;
+  mats.forEach((m,i)=>{
+    html+=`<tr data-index="${i}">
+        <td><img src="https://via.placeholder.com/24" alt=""></td>
+        <td><input type="text" value="${m.navn||''}" oninput="offerMatUpdate(${i},'navn',this.value)"></td>
+        <td><input type="number" min="0" value="${m.antal||0}" style="width:50px;" oninput="offerMatUpdate(${i},'antal',this.value)"></td>
+        <td><input type="number" min="0" value="${m.pris||0}" style="width:70px;" oninput="offerMatUpdate(${i},'pris',this.value)"></td>
+        <td class="line-sum">${((m.antal||0)*(m.pris||0)).toLocaleString('da-DK')} kr</td>
+        <td><button class="btn-ghost" onclick="offerMatRemove(${i})">✕</button></td>
+      </tr>`;
+  });
+  html+=`</tbody></table>
+      <button class="btn-ghost" style="font-size:12px;" onclick="offerMatAdd()">+ Tilføj linje</button>
+    </div>
+    <div class="ds"><div class="dl">Montør time</div><div class="dv"><input type="number" id="offer-timer" min="0" value="${s.timer||0}" style="width:60px;" oninput="offerTimerChanged()"> × ${rate} kr/time</div></div>
+    <div class="ds"><div class="dl">Subtotal ekskl. moms</div><div class="dv" id="offer-subtotal">0 kr</div></div>
+    <div class="ds"><div class="dl">Moms 25%</div><div class="dv" id="offer-vat">0 kr</div></div>
+    <div class="ds"><div class="dl">Total inkl. moms</div><div class="dv" id="offer-grand">0 kr</div></div>
+    <div class="ds"><div class="dl">Betingelser</div><div class="dv"><textarea id="offer-terms" class="fta">Betaling 14 dage netto.
+</textarea></div></div>
+    <div class="ds"><div class="dl">Hilsen</div><div class="dv">Anders Kejser</div></div>
+  `;
+  document.getElementById('offer-content').innerHTML=html;
+  document.getElementById('offer-type').value = 'Tilbud';
+  document.getElementById('offerov').classList.add('open');
+  offerRecalc();
+}
+function closeOfferPage(){
+  // save any edits back to saga
+  if(currentOfferId){
+    const s=sager.find(x=>x.id===currentOfferId);
+    if(s){
+      s.kunde = document.getElementById('offer-cust').value;
+      s.adresse = document.getElementById('offer-addr').value;
+      // materials
+      const mats=[];
+      document.querySelectorAll('#offer-mat-table tbody tr').forEach(r=>{
+        const nav=r.querySelector('input[type=text]').value;
+        const ant=parseFloat(r.querySelectorAll('input[type=number]')[0].value)||0;
+        const pr=parseFloat(r.querySelectorAll('input[type=number]')[1].value)||0;
+        if(nav) mats.push({navn:nav,vnr:'',antal:ant,pris:pr});
+      });
+      s.materialer = mats;
+      s.timer = parseFloat(document.getElementById('offer-timer').value)||0;
+      ps();
+    }
+  }
+  document.getElementById('offerov').classList.remove('open');
+  currentOfferId=null;
+}
+
+function offerMatAdd(){
+  const tbody=document.querySelector('#offer-mat-table tbody');
+  const idx=tbody.children.length;
+  const row=document.createElement('tr');
+  row.innerHTML=`
+      <td><img src="https://via.placeholder.com/24" alt=""></td>
+      <td><input type="text" oninput="offerMatUpdate(${idx},'navn',this.value)"></td>
+      <td><input type="number" min="0" value="0" style="width:50px;" oninput="offerMatUpdate(${idx},'antal',this.value)"></td>
+      <td><input type="number" min="0" value="0" style="width:70px;" oninput="offerMatUpdate(${idx},'pris',this.value)"></td>
+      <td class="line-sum">0 kr</td>
+      <td><button class="btn-ghost" onclick="offerMatRemove(${idx})">✕</button></td>`;
+  tbody.appendChild(row);
+  offerRecalc();
+}
+function offerMatUpdate(i,field,val){
+  const row=document.querySelector(`#offer-mat-table tbody tr[data-index='${i}']`);
+  if(!row) return;
+  let antal=parseFloat(row.querySelector('input[type=number]').value)||0;
+  let pris=parseFloat(row.querySelectorAll('input[type=number]')[1].value)||0;
+  if(field==='antal') antal=parseFloat(val)||0;
+  if(field==='pris') pris=parseFloat(val)||0;
+  row.querySelector('.line-sum').textContent=(antal*pris).toLocaleString('da-DK')+' kr';
+  offerRecalc();
+}
+function offerMatRemove(i){
+  const row=document.querySelector(`#offer-mat-table tbody tr[data-index='${i}']`);
+  if(row) row.remove();
+  offerRecalc();
+}
+function offerTimerChanged(){
+  offerRecalc();
+}
+function offerRecalc(){
+  const rate=parseFloat(JSON.parse(localStorage.getItem('ke2-settings')||'{}').rate)||0;
+  let matTotal=0;
+  document.querySelectorAll('#offer-mat-table tbody tr').forEach(r=>{
+    const ant=parseFloat(r.querySelectorAll('input[type=number]')[0].value)||0;
+    const pr=parseFloat(r.querySelectorAll('input[type=number]')[1].value)||0;
+    matTotal+=ant*pr;
+  });
+  const timer=parseFloat(document.getElementById('offer-timer').value)||0;
+  const workTotal=timer*rate;
+  const subtotal=matTotal+workTotal;
+  const vat=subtotal*0.25;
+  const grand=subtotal+vat;
+  document.getElementById('offer-subtotal').textContent=subtotal.toLocaleString('da-DK')+' kr';
+  document.getElementById('offer-vat').textContent=vat.toLocaleString('da-DK')+' kr';
+  document.getElementById('offer-grand').textContent=grand.toLocaleString('da-DK')+' kr';
+}
+
+function exportOfferPDF(id){
+  const s=sager.find(x=>x.id===id);
+  if(!s) return;
+  // gather data from form to ensure latest
+  const cust=document.getElementById('offer-cust').value;
+  const addr=document.getElementById('offer-addr').value;
+  const type=document.getElementById('offer-type').value;
+  const terms=document.getElementById('offer-terms').value;
+  const rate=parseFloat(JSON.parse(localStorage.getItem('ke2-settings')||'{}').rate)||0;
+  const materials=[];
+  document.querySelectorAll('#offer-mat-table tbody tr').forEach(r=>{
+    const nav=r.querySelector('input[type=text]').value;
+    const ant=parseFloat(r.querySelectorAll('input[type=number]')[0].value)||0;
+    const pr=parseFloat(r.querySelectorAll('input[type=number]')[1].value)||0;
+    if(nav) materials.push({navn:nav,antal:ant,pris:pr});
+  });
+  const timer=parseFloat(document.getElementById('offer-timer').value)||0;
+  // build PDF
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y=20;
+  doc.setFontSize(14);
+  doc.text(type, 20, y); y+=10;
+  doc.setFontSize(12);
+  doc.text(`Kunde: ${cust}`,20,y); y+=6;
+  doc.text(`Adresse: ${addr}`,20,y); y+=10;
+  doc.text('Materialer:',20,y); y+=6;
+  materials.forEach(m=>{
+    doc.text(`${m.navn} - ${m.antal} × ${m.pris} kr = ${ (m.antal*m.pris).toLocaleString('da-DK')} kr`,20,y); y+=6;
+  });
+  y+=4;
+  doc.text(`Montør timer: ${timer} × ${rate} kr`,20,y); y+=6;
+  const subtotal=parseFloat(document.getElementById('offer-subtotal').textContent)||0;
+  const vat=parseFloat(document.getElementById('offer-vat').textContent)||0;
+  const grand=parseFloat(document.getElementById('offer-grand').textContent)||0;
+  y+=4;
+  doc.text(`Subtotal: ${subtotal} kr`,20,y); y+=6;
+  doc.text(`Moms 25%: ${vat} kr`,20,y); y+=6;
+  doc.text(`Total inkl. moms: ${grand} kr`,20,y); y+=10;
+  doc.text('Betingelser:',20,y); y+=6;
+  doc.text(terms,20,y); y+=10;
+  doc.text('Hilsen Anders Kejser',20,y);
+  doc.save(`${type}-${cust}-${new Date().toISOString().slice(0,10)}.pdf`);
 }
 
 function oc(e,id){e.stopPropagation();cId=id;const m=document.getElementById('ctx');m.classList.add('open');m.style.left=Math.min(e.clientX,window.innerWidth-175)+'px';m.style.top=Math.min(e.clientY,window.innerHeight-200)+'px';}
